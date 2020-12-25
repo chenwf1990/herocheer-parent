@@ -29,5 +29,17 @@
             <artifactId>swagger-bootstrap-ui</artifactId>
             <version>${swagger2-bootstrap.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.herocheer</groupId>
+            <artifactId>herocheer-cache</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.herocheer</groupId>
+            <artifactId>herocheer-common</artifactId>
+            <version>0.0.1</version>
+        </dependency>
     </dependencies>
 </project>

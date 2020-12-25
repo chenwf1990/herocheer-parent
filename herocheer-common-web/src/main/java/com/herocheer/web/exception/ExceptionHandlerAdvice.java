@@ -1,6 +1,7 @@
 package com.herocheer.web.exception;
 
 import com.herocheer.common.base.ResponseResult;
+import com.herocheer.common.constants.ResponseCode;
 import com.herocheer.common.exception.CommonException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
@@ -68,7 +69,7 @@ public class ExceptionHandlerAdvice {
         String parameterName = e.getParameterName();
         String parameterType = e.getParameterType();
         log.error("缺少必填参数{} {}", parameterType, parameterName, e);
-        return ResponseResult.fail(500, "缺少必填参数:" + parameterName);
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "缺少必填参数:" + parameterName);
     }
 
     /**
@@ -84,9 +85,9 @@ public class ExceptionHandlerAdvice {
         log.error(message, e);
         final String[] split = message.split("'");
         if (split.length >= 2) {
-            return ResponseResult.fail(500, "请求方式错误"+split[1]);
+            return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求方式错误"+split[1]);
         }
-        return ResponseResult.fail(500, "请求方式错误");
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求方式错误");
     }
 
     /**
@@ -103,13 +104,13 @@ public class ExceptionHandlerAdvice {
         final String regEx = "[\u4e00-\u9fa5]";
         final Pattern p = Pattern.compile(regEx);
         if (p.matcher(message).find()) {
-            return ResponseResult.fail(500, message);
+            return ResponseResult.fail(ResponseCode.SERVER_ERROR, message);
         }
         if (message.contains("timeout") || message.contains("timedout")) {
-            return message.contains("refused") ? ResponseResult.fail(500, "服务器拒绝连接")
-                    : ResponseResult.fail(500, "服务器拒绝连接");
+            return message.contains("refused") ? ResponseResult.fail(ResponseCode.SERVER_ERROR, "服务器拒绝连接")
+                    : ResponseResult.fail(ResponseCode.SERVER_ERROR, "服务器拒绝连接");
         }
-        return ResponseResult.fail(500, "服务器内部异常");
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "服务器内部异常");
     }
 
     /**
@@ -122,7 +123,7 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseResult handleException(Exception e) {
         log.error(e.getMessage(), e);
-        return ResponseResult.fail(500, this.getBindMessage(e.getMessage()));
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, this.getBindMessage(e.getMessage()));
     }
 
     /**
@@ -135,7 +136,7 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseResult noMapping(NoHandlerFoundException e) {
         log.error(e.getMessage(), e);
-        return ResponseResult.fail(500, "请求路径不存在");
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求路径不存在");
     }
 
     /**
@@ -148,7 +149,7 @@ public class ExceptionHandlerAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseResult errorParam(MethodArgumentTypeMismatchException me) {
         log.error(me.getMessage(), me);
-        return ResponseResult.fail(500, "请求参数不合法");
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求参数不合法");
     }
 
     /**
@@ -164,9 +165,9 @@ public class ExceptionHandlerAdvice {
         log.error(message, e);
         final String[] split = message.split("'");
         if (split.length >= 2) {
-            return ResponseResult.fail(500, "参数文本类型错误"+split[1]);
+            return ResponseResult.fail(ResponseCode.SERVER_ERROR, "参数文本类型错误"+split[1]);
         }
-        return ResponseResult.fail(500, "参数文本类型错误");
+        return ResponseResult.fail(ResponseCode.SERVER_ERROR, "参数文本类型错误");
     }
 
 

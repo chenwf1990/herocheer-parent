@@ -19,6 +19,7 @@
         <module>herocheer-common</module>
         <module>herocheer-common-web</module>
         <module>herocheer-dubbo</module>
+        <module>herocheer-cache</module>
     </modules>
 
     <properties>

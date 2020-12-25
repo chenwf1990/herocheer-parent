@@ -1,4 +1,4 @@
-package com.herocheer.common.base.controller;
+package com.herocheer.web.base;
 
 /**
  * @desc 控制层辅助类

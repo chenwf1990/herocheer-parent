@@ -1,5 +1,7 @@
 package com.herocheer.common.exception;
 
+import com.herocheer.common.constants.ResponseCode;
+
 /**
  * @desc 通用异常类
  * @author chenwf
@@ -88,7 +90,7 @@ public class CommonException extends RuntimeException {
      * @param errorMsg  the error msg
      */
     public CommonException(String errorMsg) {
-        this.errorCode = 200;
+        this.errorCode = ResponseCode.SUCCESS;
         this.errorMsg = errorMsg;
     }
 
