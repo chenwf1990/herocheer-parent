@@ -8,4 +8,5 @@ package com.herocheer.web.base;
  */
 public class BaseController {
 
+
 }

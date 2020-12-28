@@ -1,4 +1,4 @@
-package com.herocheer.mybatis.base;
+package com.herocheer.mybatis.base.dao;
 
 import java.util.List;
 import java.util.Map;

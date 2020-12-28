@@ -9,4 +9,7 @@ import cn.hutool.core.util.StrUtil;
  * @company 厦门熙重电子科技有限公司
  */
 public class StringUtils extends StrUtil {
+    public static String msNull(String str, String def) {
+        return isNotEmpty(str) ? str : def;
+    }
 }
