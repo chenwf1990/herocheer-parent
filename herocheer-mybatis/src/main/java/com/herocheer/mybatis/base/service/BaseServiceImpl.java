@@ -4,7 +4,6 @@ import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.base.service.BaseService;
 import com.herocheer.common.exception.CommonException;
 import com.herocheer.mybatis.base.dao.BaseDao;
-import org.mybatis.spring.support.SqlSessionDaoSupport;
 
 import javax.annotation.Resource;
 import java.io.Serializable;
@@ -17,7 +16,7 @@ import java.util.Map;
  * @create 2020/12/21
  * @company 厦门熙重电子科技有限公司
  */
-public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEntity,ID extends Serializable> extends SqlSessionDaoSupport implements BaseService<T,ID> {
+public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEntity,ID extends Serializable> implements BaseService<T,ID> {
     @Resource
     protected D dao;
 

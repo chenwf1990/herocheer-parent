@@ -1,6 +1,7 @@
 package com.herocheer.mybatis.base.dao;
 
 import com.herocheer.common.base.entity.BaseEntity;
+import org.apache.ibatis.annotations.Select;
 
 import java.io.Serializable;
 import java.util.List;
