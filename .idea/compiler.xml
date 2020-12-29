@@ -27,10 +27,10 @@
       <module name="herocheer-common" options="" />
       <module name="herocheer-common-web" options="-parameters" />
       <module name="herocheer-dubbo" options="-parameters" />
-      <module name="herocheer-dubbo-client" options="-parameters" />
-      <module name="herocheer-dubbo-provider" options="-parameters" />
+      <module name="herocheer-dubbo-client" options="" />
+      <module name="herocheer-dubbo-provider" options="" />
       <module name="herocheer-dubbo-provider1" options="-parameters" />
-      <module name="herocheer-mybatis" options="-parameters" />
+      <module name="herocheer-mybatis" options="" />
     </option>
   </component>
 </project>

@@ -10,16 +10,20 @@
         <version>2.4.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>com.herocheer</groupId>
     <artifactId>herocheer-parent</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>
+
     <modules>
         <module>herocheer-mybatis</module>
         <module>herocheer-common</module>
         <module>herocheer-common-web</module>
         <module>herocheer-dubbo</module>
         <module>herocheer-cache</module>
+        <module>herocheer-dubbo/herocheer-dubbo-client</module>
+        <module>herocheer-dubbo/herocheer-dubbo-provider</module>
     </modules>
 
     <properties>
@@ -37,7 +41,6 @@
         <swagger2-bootstrap.version>1.9.1</swagger2-bootstrap.version>
         <mysql.version>8.0.17</mysql.version>
         <mybatis.version>3.4.6</mybatis.version>
-        <org.mybatis.spring.boot.version>2.1.4</org.mybatis.spring.boot.version>
         <lombok.version>1.18.16</lombok.version>
         <hutool-all.version>5.1.0</hutool-all.version>
         <fastjson.version>1.2.68</fastjson.version>
