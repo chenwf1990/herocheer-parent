@@ -1,4 +1,4 @@
-package com.herocheer.common.base.page;
+package com.herocheer.common.base.Page;
 
 import com.alibaba.fastjson.JSONObject;
 

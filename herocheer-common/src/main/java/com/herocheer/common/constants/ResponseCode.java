@@ -9,5 +9,5 @@ package com.herocheer.common.constants;
 public class ResponseCode {
     public static final Integer SUCCESS = 200; //请求成功
     public static final Integer UN_LOGIN = 201;//请求成功，未登录
-    public static final Integer SERVER_ERROR= ResponseCode.SERVER_ERROR;//系统错误
+    public static final Integer SERVER_ERROR = 500;//系统错误
 }

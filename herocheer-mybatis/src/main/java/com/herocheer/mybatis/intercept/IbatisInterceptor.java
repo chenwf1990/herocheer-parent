@@ -1,9 +1,8 @@
 package com.herocheer.mybatis.intercept;
 
 import cn.hutool.core.util.ReflectUtil;
+import com.herocheer.common.base.Page.Page;
 import com.herocheer.common.base.entity.BaseEntity;
-import com.herocheer.common.base.page.Page;
-import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -11,8 +10,6 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.*;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.springframework.stereotype.Component;
 

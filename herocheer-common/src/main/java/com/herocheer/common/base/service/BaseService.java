@@ -1,5 +1,8 @@
 package com.herocheer.common.base.service;
 
+import com.herocheer.common.base.entity.BaseEntity;
+
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +12,7 @@ import java.util.Map;
  * @date 2020/12/25
  * @company 厦门熙重电子科技有限公司
  */
-public interface BaseService<T,ID> {
+public interface BaseService<T extends BaseEntity,ID extends Serializable> {
     /**
      * 根据主键id查询实体对象
      * @param id
