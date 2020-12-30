@@ -4,6 +4,7 @@ import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.base.service.BaseService;
 import com.herocheer.common.exception.CommonException;
 import com.herocheer.mybatis.base.dao.BaseDao;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
 import java.io.Serializable;
@@ -17,7 +18,7 @@ import java.util.Map;
  * @company 厦门熙重电子科技有限公司
  */
 public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEntity,ID extends Serializable> implements BaseService<T,ID> {
-    @Resource
+    @Autowired
     protected D dao;
 
     @Override
@@ -52,5 +53,15 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
     @Override
     public long update(T t) {
         return this.dao.update(t);
+    }
+
+    /**
+     * 根据主键删除数据
+     *
+     * @param id
+     * @return
+     */
+    public long delete(ID id) {
+        return this.dao.delete(id);
     }
 }

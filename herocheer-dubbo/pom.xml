@@ -14,7 +14,6 @@
         <java.version>1.8</java.version>
         <java.source.version>1.8</java.source.version>
         <java.target.version>1.8</java.target.version>
-        <project.version>0.0.1</project.version>
         <dubbo.version>2.7.7</dubbo.version>
         <curator-framework.version>4.3.0</curator-framework.version>
         <curator.version>4.3.0</curator.version>
@@ -51,29 +50,12 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-framework</artifactId>
-            <version>${curator-framework.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-            <version>${curator-recipes.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>zookeeper</artifactId>
-                    <groupId>org.apache.zookeeper</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
 
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-dependencies-zookeeper</artifactId>
             <version>${dubbo.version}</version>
+            <type>pom</type>
             <exclusions>
                 <exclusion>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -81,6 +63,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+
 
     </dependencies>
 </project>

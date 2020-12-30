@@ -34,6 +34,17 @@ public interface BaseService<T extends BaseEntity,ID extends Serializable> {
      */
     Long insert(T t);
 
-
+    /**
+     * 根据主键更新数据
+     * @param t
+     * @return
+     */
     long update(T t);
+
+    /**
+     * 根据主键删除数据
+     * @param ID
+     * @return
+     */
+    long delete(ID ID);
 }
