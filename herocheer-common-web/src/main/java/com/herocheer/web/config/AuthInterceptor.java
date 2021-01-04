@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.ResponseResult;
+import com.herocheer.common.base.entity.UserEntity;
 import com.herocheer.common.constants.ResponseCode;
 import com.herocheer.common.utils.StringUtils;
 import com.herocheer.web.annotation.AllowAnonymous;
@@ -52,14 +53,28 @@ public class AuthInterceptor implements HandlerInterceptor {
                 abortWith(response,ResponseCode.UN_LOGIN);
                 return false;
             }else {
-                JSONObject json = JSONObject.parseObject(userInfo);
-                request.setAttribute("userId",json.getLong("id"));
-                request.setAttribute("phone",json.getString("phone"));
-                request.setAttribute("certificateNo",json.getString("certificateNo"));
-                request.setAttribute("userName",json.getString("userName"));
+                this.setAttribute(request,userInfo,authorization);
                 return true;
             }
         }
+    }
+
+    /**
+     * 设置用户信息
+     * @param request
+     * @param userInfo
+     * @param authorization
+     */
+    private void setAttribute(HttpServletRequest request, String userInfo, String authorization) {
+        JSONObject json = JSONObject.parseObject(userInfo);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setId(json.getLong("id"));
+        userEntity.setPhone(json.getString("phone"));
+        userEntity.setUserName(json.getString("userName"));
+        userEntity.setToken(authorization);
+        userEntity.setUserType(json.getIntValue("userType"));
+        userEntity.setOtherId(null);//预留
+        request.setAttribute("userBaseInfo",JSONObject.toJSONString(userEntity));
     }
 
     private void abortWith(HttpServletResponse response, int code) {
