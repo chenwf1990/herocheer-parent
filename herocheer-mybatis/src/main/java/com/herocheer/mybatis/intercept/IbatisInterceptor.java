@@ -8,6 +8,8 @@ import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.constants.ResponseCode;
 import com.herocheer.common.exception.CommonException;
 import com.herocheer.common.utils.StringUtils;
+import org.apache.ibatis.cache.CacheKey;
+import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -16,8 +18,9 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
+import org.apache.ibatis.session.ResultHandler;
+import org.apache.ibatis.session.RowBounds;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -27,7 +30,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -38,8 +40,8 @@ import java.util.Properties;
  */
 @Component
 @Intercepts({
-//        @Signature(type = Executor.class,method = "update",args = {MappedStatement.class, Object.class}),
-        @Signature(type = StatementHandler.class,method = "prepare",args = {Connection.class,Integer.class})
+            @Signature(type = Executor.class,method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+            @Signature(type = Executor.class,method = "update",args = {MappedStatement.class, Object.class}),
 })
 public class IbatisInterceptor implements Interceptor {
     private Properties properties;
@@ -49,14 +51,42 @@ public class IbatisInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        final RoutingStatementHandler handler = (RoutingStatementHandler) invocation.getTarget(); //获取分页拦截器必要的参数
-        final StatementHandler delegate = (StatementHandler) ReflectUtil.getFieldValue(handler, "delegate");
-        //获取StateMent
-        final MappedStatement mappedStatement=(MappedStatement)ReflectUtil.getFieldValue(delegate, "mappedStatement");
-        //获取执行的SQL
-        final BoundSql boundSql = delegate.getBoundSql();
-        //获取执行的参数
-        final Object parameter = boundSql.getParameterObject();
+        if(invocation.getArgs().length > 2){
+//            query1(invocation);
+            query(invocation);
+        }else{
+            update(invocation);
+        }
+
+        return invocation.proceed();
+    }
+
+    private void query(Invocation invocation) {
+        Object[] args = invocation.getArgs();
+        MappedStatement ms = (MappedStatement) args[0];
+        Object parameterObject = args[1];
+        BoundSql boundSql = ms.getBoundSql(parameterObject);
+        SqlCommandType sqlCommandType = ms.getSqlCommandType();
+        if (sqlCommandType.SELECT.equals(sqlCommandType)) {
+            //判断参数是否有Page参数，如果有则按照
+            Page page = Page.getLocalPage();
+            if (page != null) {
+                final String sql = boundSql.getSql();
+                //计算总的条目数
+                final String countSQL = getMysqlCountSql(new StringBuffer(sql));
+                int totalCount = getCounts(ms, countSQL, boundSql,invocation,parameterObject);
+                //获取分页后的结果
+                final String pageSql = this.getMysqlPageSql(page, new StringBuffer(sql));
+                ReflectUtil.setFieldValue(boundSql, "sql", pageSql);
+                page.setTotalCount(totalCount);
+                Page.clearPage();
+            }
+        }
+    }
+
+    private void update(Invocation invocation) {
+        final MappedStatement mappedStatement= (MappedStatement) invocation.getArgs()[0];
+        Object parameter = invocation.getArgs()[1];
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
         if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
             if (parameter != null && parameter instanceof BaseEntity) {
@@ -69,13 +99,27 @@ public class IbatisInterceptor implements Interceptor {
                     entity.setUpdateId(id);
                     entity.setUpdateTime(System.currentTimeMillis());
                     entity.setUpdateBy(userName);
+
                 } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
                     entity.setCreatedId(id);
                     entity.setCreatedTime(System.currentTimeMillis());
                     entity.setCreatedBy(userName);
                 }
             }
-        }else if (sqlCommandType.SELECT.equals(sqlCommandType)) {
+        }
+    }
+
+    private void query1(Invocation invocation) {
+        final RoutingStatementHandler handler = (RoutingStatementHandler) invocation.getTarget(); //获取分页拦截器必要的参数
+        final StatementHandler delegate = (StatementHandler) ReflectUtil.getFieldValue(handler, "delegate");
+        //获取StateMent
+        final MappedStatement mappedStatement=(MappedStatement)ReflectUtil.getFieldValue(delegate, "mappedStatement");
+        //获取执行的SQL
+        final BoundSql boundSql = delegate.getBoundSql();
+        //获取执行的参数
+        final Object parameter = boundSql.getParameterObject();
+        SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
+        if (sqlCommandType.SELECT.equals(sqlCommandType)) {
             //判断参数是否有Page参数，如果有则按照
             Page page = Page.getLocalPage();
             if (page != null) {
@@ -90,7 +134,6 @@ public class IbatisInterceptor implements Interceptor {
                 Page.clearPage();
             }
         }
-        return invocation.proceed();
     }
 
     //备注：
