@@ -46,7 +46,7 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
      * @return
      */
     @Override
-    public Long insert(T t){
+    public long insert(T t){
         return this.dao.insert(t);
     }
 

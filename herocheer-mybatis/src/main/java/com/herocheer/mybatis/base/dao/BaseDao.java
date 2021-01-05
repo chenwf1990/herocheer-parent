@@ -18,7 +18,7 @@ public interface BaseDao<T extends BaseEntity,ID extends Serializable> {
 
     List<T> findByLimit(Map<String, Object> params);
 
-    Long insert(T t);
+    long insert(T t);
 
     long update(T t);
 

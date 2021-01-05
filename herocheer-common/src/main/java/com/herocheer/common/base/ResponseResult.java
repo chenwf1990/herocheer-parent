@@ -73,8 +73,17 @@ public class ResponseResult {
     public static ResponseResult fail(String message) {
         ResponseResult responseResult = new ResponseResult();
         responseResult.setSuccess("F");
-        responseResult.setCode(400);
+        responseResult.setCode(200);
         responseResult.setMessage(message);
+        responseResult.setTimestamp(System.currentTimeMillis());
+        return responseResult;
+    }
+
+    public static ResponseResult fail() {
+        ResponseResult responseResult = new ResponseResult();
+        responseResult.setSuccess("F");
+        responseResult.setCode(200);
+        responseResult.setMessage("操作失败");
         responseResult.setTimestamp(System.currentTimeMillis());
         return responseResult;
     }
@@ -86,6 +95,18 @@ public class ResponseResult {
         responseResult.setMessage(message);
         responseResult.setTimestamp(System.currentTimeMillis());
         return responseResult;
+    }
+
+    /**
+     * 更新或新增判断
+     * @param count
+     * @return
+     */
+    public static ResponseResult isSuccess(long count) {
+        if(count > 0){
+            return ok();
+        }
+        return fail();
     }
 
     public static ResponseResult getResponse(Integer code) {

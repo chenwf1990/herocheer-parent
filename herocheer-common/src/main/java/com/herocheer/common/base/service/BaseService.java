@@ -32,7 +32,7 @@ public interface BaseService<T extends BaseEntity,ID extends Serializable> {
      * @param t
      * @return
      */
-    Long insert(T t);
+    long insert(T t);
 
     /**
      * 根据主键更新数据
