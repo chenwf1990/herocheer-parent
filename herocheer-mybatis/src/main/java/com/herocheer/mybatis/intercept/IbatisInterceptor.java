@@ -61,12 +61,8 @@ public class IbatisInterceptor implements Interceptor {
         if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
             if (parameter != null && parameter instanceof BaseEntity) {
                 BaseEntity entity = (BaseEntity) parameter;
-                String authorization = getAuthorization(entity);
-                String userBaseInfo = redisClient.get(authorization);
-                if(StringUtils.isEmpty(userBaseInfo)){
-                    throw new CommonException(ResponseCode.UN_LOGIN,"请先登录");
-                }
-                JSONObject json = JSONObject.parseObject(userBaseInfo);
+                JSONObject json = getUserBaseInfo(entity);
+
                 Long id = json.getLong("id");
                 String userName = json.getString("userName");
                 if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
@@ -100,17 +96,24 @@ public class IbatisInterceptor implements Interceptor {
     //备注：
     // 此处判断是因为分布式服务，服务在不同的虚拟机上，导致获取不到请求头的数据
     // 所有分布式的应用需要在对应的实体传tokenId
-    private String getAuthorization(BaseEntity entity) {
-        String authorization;
+    private JSONObject getUserBaseInfo(BaseEntity entity) {
+        String userBaseInfo = null;
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if(attributes != null){
             HttpServletRequest request = attributes.getRequest();
-            authorization = request.getHeader("authorization");
+            Object obj = request.getAttribute("userBaseInfo");
+            if(obj != null){
+                userBaseInfo = obj.toString();
+            }
         }else{
             //此处不判断tokenId是否为空,直接让程序员必须传tokenId;
-            authorization = entity.getTokenId();
+            userBaseInfo = redisClient.get(entity.getTokenId());
         }
-        return authorization;
+
+        if(StringUtils.isEmpty(userBaseInfo)){
+            throw new CommonException(ResponseCode.UN_LOGIN,"请先登录");
+        }
+        return JSONObject.parseObject(userBaseInfo);
     }
 
     @Override
