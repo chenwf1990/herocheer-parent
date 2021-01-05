@@ -1,8 +1,13 @@
 package com.herocheer.mybatis.intercept;
 
 import cn.hutool.core.util.ReflectUtil;
+import com.alibaba.fastjson.JSONObject;
+import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.Page.Page;
 import com.herocheer.common.base.entity.BaseEntity;
+import com.herocheer.common.constants.ResponseCode;
+import com.herocheer.common.exception.CommonException;
+import com.herocheer.common.utils.StringUtils;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
@@ -12,11 +17,17 @@ import org.apache.ibatis.mapping.SqlCommandType;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -33,6 +44,9 @@ import java.util.Properties;
 public class IbatisInterceptor implements Interceptor {
     private Properties properties;
 
+    @Resource
+    private RedisClient redisClient;
+
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         final RoutingStatementHandler handler = (RoutingStatementHandler) invocation.getTarget(); //获取分页拦截器必要的参数
@@ -44,19 +58,26 @@ public class IbatisInterceptor implements Interceptor {
         //获取执行的参数
         final Object parameter = boundSql.getParameterObject();
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
-        if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
+        if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
             if (parameter != null && parameter instanceof BaseEntity) {
                 BaseEntity entity = (BaseEntity) parameter;
-                entity.setUpdateId(0L);
-                entity.setUpdateTime(System.currentTimeMillis());
-                entity.setUpdateBy("chenwf");
-            }
-        }else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
-            if (parameter != null && parameter instanceof BaseEntity) {
-                BaseEntity entity = (BaseEntity) parameter;
-                entity.setCreatedId(0L);
-                entity.setCreatedTime(System.currentTimeMillis());
-                entity.setCreatedBy("chenwf");
+                String authorization = getAuthorization(entity);
+                String userBaseInfo = redisClient.get(authorization);
+                if(StringUtils.isEmpty(userBaseInfo)){
+                    throw new CommonException(ResponseCode.UN_LOGIN,"请先登录");
+                }
+                JSONObject json = JSONObject.parseObject(userBaseInfo);
+                Long id = json.getLong("id");
+                String userName = json.getString("userName");
+                if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
+                    entity.setUpdateId(id);
+                    entity.setUpdateTime(System.currentTimeMillis());
+                    entity.setUpdateBy(userName);
+                } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
+                    entity.setCreatedId(id);
+                    entity.setCreatedTime(System.currentTimeMillis());
+                    entity.setCreatedBy(userName);
+                }
             }
         }else if (sqlCommandType.SELECT.equals(sqlCommandType)) {
             //判断参数是否有Page参数，如果有则按照
@@ -65,7 +86,7 @@ public class IbatisInterceptor implements Interceptor {
                 final String sql = boundSql.getSql();
                 //计算总的条目数
                 final String countSQL = getMysqlCountSql(new StringBuffer(sql));
-                int totalCount = getCounts(mappedStatement, countSQL, boundSql, page,invocation);
+                int totalCount = getCounts(mappedStatement, countSQL, boundSql,invocation,parameter);
                 //获取分页后的结果
                 final String pageSql = this.getMysqlPageSql(page, new StringBuffer(sql));
                 ReflectUtil.setFieldValue(boundSql, "sql", pageSql);
@@ -74,6 +95,22 @@ public class IbatisInterceptor implements Interceptor {
             }
         }
         return invocation.proceed();
+    }
+
+    //备注：
+    // 此处判断是因为分布式服务，服务在不同的虚拟机上，导致获取不到请求头的数据
+    // 所有分布式的应用需要在对应的实体传tokenId
+    private String getAuthorization(BaseEntity entity) {
+        String authorization;
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if(attributes != null){
+            HttpServletRequest request = attributes.getRequest();
+            authorization = request.getHeader("authorization");
+        }else{
+            //此处不判断tokenId是否为空,直接让程序员必须传tokenId;
+            authorization = entity.getTokenId();
+        }
+        return authorization;
     }
 
     @Override
@@ -116,9 +153,10 @@ public class IbatisInterceptor implements Interceptor {
       @return
        * @param mappedStatement
       * @param countSQL
-      * @param invocation */
-     private int getCounts(MappedStatement mappedStatement, String countSQL, BoundSql boundSql, Page page, Invocation invocation) {
-         final ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, page, boundSql);
+      * @param invocation
+      * @param parameter    */
+     private int getCounts(MappedStatement mappedStatement, String countSQL, BoundSql boundSql, Invocation invocation, Object parameter) {
+         final ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, parameter, boundSql);
          Connection connection = null;
          ResultSet rs = null;
          PreparedStatement countStmt = null;

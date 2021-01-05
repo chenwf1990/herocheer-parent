@@ -28,4 +28,19 @@ public class BaseController {
         UserEntity userEntity = JSONObject.parseObject(userBaseInfo.toString(),UserEntity.class);
         return userEntity;
     }
+
+    /**
+     * 获取当前tokenId
+     * 备注：使用@AllowAnonymous获取不到用户信息，会抛出异常
+     * @param request
+     * @return
+     */
+    protected String getCurTokenId(HttpServletRequest request){
+        Object tokenId = request.getHeader("authorization");
+        if(tokenId == null){
+            return "";
+        }
+        return tokenId.toString();
+    }
+
 }

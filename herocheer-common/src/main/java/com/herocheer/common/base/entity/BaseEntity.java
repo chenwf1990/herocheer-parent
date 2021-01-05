@@ -19,4 +19,5 @@ public class BaseEntity implements Serializable {
     private String updateBy;
     private Long updateTime;
     private Long updateId;
+    private String tokenId;
 }
