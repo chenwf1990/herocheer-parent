@@ -46,8 +46,6 @@ public class IbatisInterceptor implements Interceptor {
 
     @Resource
     private RedisClient redisClient;
-    @Value("${herocheer.login}")
-    private Boolean login;
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -88,17 +86,16 @@ public class IbatisInterceptor implements Interceptor {
         Object parameter = invocation.getArgs()[1];
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
         if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
-            if (parameter != null && parameter instanceof BaseEntity && !login) {
+            if (parameter != null && parameter instanceof BaseEntity) {
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
 
-                Long id = json.getLong("id");
-                String userName = json.getString("userName");
+                Long id = json.getLong("id") == null ? 0 : json.getLong("id");
+                String userName = StringUtils.isEmpty(json.getString("userName")) ? "system" : json.getString("userName");
                 if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
                     entity.setUpdateId(id);
                     entity.setUpdateTime(System.currentTimeMillis());
                     entity.setUpdateBy(userName);
-
                 } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
                     entity.setCreatedId(id);
                     entity.setCreatedTime(System.currentTimeMillis());
@@ -113,7 +110,7 @@ public class IbatisInterceptor implements Interceptor {
     // 此处判断是因为分布式服务，服务在不同的虚拟机上，导致获取不到请求头的数据
     // 所有分布式的应用需要在对应的实体传tokenId
     private JSONObject getUserBaseInfo(BaseEntity entity) {
-        String userBaseInfo = null;
+        String userBaseInfo = "";
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if(attributes != null){
             HttpServletRequest request = attributes.getRequest();
@@ -124,10 +121,6 @@ public class IbatisInterceptor implements Interceptor {
         }else{
             //此处不判断tokenId是否为空,直接让程序员必须传tokenId;
             userBaseInfo = redisClient.get(entity.getTokenId());
-        }
-
-        if(StringUtils.isEmpty(userBaseInfo)){
-            throw new CommonException(ResponseCode.UN_LOGIN,"请先登录");
         }
         return JSONObject.parseObject(userBaseInfo);
     }
