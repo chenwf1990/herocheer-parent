@@ -8,11 +8,8 @@ import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.constants.ResponseCode;
 import com.herocheer.common.exception.CommonException;
 import com.herocheer.common.utils.StringUtils;
-import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
-import org.apache.ibatis.executor.statement.RoutingStatementHandler;
-import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
@@ -20,6 +17,7 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -48,11 +46,12 @@ public class IbatisInterceptor implements Interceptor {
 
     @Resource
     private RedisClient redisClient;
+    @Value("${herocheer.login}")
+    private Boolean login;
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         if(invocation.getArgs().length > 2){
-//            query1(invocation);
             query(invocation);
         }else{
             update(invocation);
@@ -89,7 +88,7 @@ public class IbatisInterceptor implements Interceptor {
         Object parameter = invocation.getArgs()[1];
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
         if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
-            if (parameter != null && parameter instanceof BaseEntity) {
+            if (parameter != null && parameter instanceof BaseEntity && !login) {
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
 
@@ -109,32 +108,6 @@ public class IbatisInterceptor implements Interceptor {
         }
     }
 
-    private void query1(Invocation invocation) {
-        final RoutingStatementHandler handler = (RoutingStatementHandler) invocation.getTarget(); //获取分页拦截器必要的参数
-        final StatementHandler delegate = (StatementHandler) ReflectUtil.getFieldValue(handler, "delegate");
-        //获取StateMent
-        final MappedStatement mappedStatement=(MappedStatement)ReflectUtil.getFieldValue(delegate, "mappedStatement");
-        //获取执行的SQL
-        final BoundSql boundSql = delegate.getBoundSql();
-        //获取执行的参数
-        final Object parameter = boundSql.getParameterObject();
-        SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
-        if (sqlCommandType.SELECT.equals(sqlCommandType)) {
-            //判断参数是否有Page参数，如果有则按照
-            Page page = Page.getLocalPage();
-            if (page != null) {
-                final String sql = boundSql.getSql();
-                //计算总的条目数
-                final String countSQL = getMysqlCountSql(new StringBuffer(sql));
-                int totalCount = getCounts(mappedStatement, countSQL, boundSql,invocation,parameter);
-                //获取分页后的结果
-                final String pageSql = this.getMysqlPageSql(page, new StringBuffer(sql));
-                ReflectUtil.setFieldValue(boundSql, "sql", pageSql);
-                page.setTotalCount(totalCount);
-                Page.clearPage();
-            }
-        }
-    }
 
     //备注：
     // 此处判断是因为分布式服务，服务在不同的虚拟机上，导致获取不到请求头的数据
@@ -200,7 +173,8 @@ public class IbatisInterceptor implements Interceptor {
        * @param mappedStatement
       * @param countSQL
       * @param invocation
-      * @param parameter    */
+      * @param parameter
+      */
      private int getCounts(MappedStatement mappedStatement, String countSQL, BoundSql boundSql, Invocation invocation, Object parameter) {
          final ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, parameter, boundSql);
          Connection connection = null;
