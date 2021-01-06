@@ -89,9 +89,8 @@ public class IbatisInterceptor implements Interceptor {
             if (parameter != null && parameter instanceof BaseEntity) {
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
-
-                Long id = json.getLong("id") == null ? 0 : json.getLong("id");
-                String userName = StringUtils.isEmpty(json.getString("userName")) ? "system" : json.getString("userName");
+                Long id = json == null || json.getLong("id") == null ? 0 : json.getLong("id");
+                String userName = json == null || StringUtils.isEmpty(json.getString("userName")) ? "system" : json.getString("userName");
                 if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
                     entity.setUpdateId(id);
                     entity.setUpdateTime(System.currentTimeMillis());

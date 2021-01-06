@@ -1,6 +1,9 @@
 package com.herocheer.common.base.Page;
 
 import com.alibaba.fastjson.JSONObject;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,13 +14,19 @@ import java.util.List;
  * @date 2020/12/26
  * @company 厦门熙重电子科技有限公司
  */
+@ApiModel("分页对象")
+@Data
 public class Page<T> implements Serializable {
     protected static final ThreadLocal<Page> LOCAL_PAGE = new ThreadLocal();
-
+    @ApiModelProperty("总页数")
     private Integer totalPage;
+    @ApiModelProperty("总条数")
     private Integer totalCount;
+    @ApiModelProperty("页数")
     private Integer pageSize = 10;
+    @ApiModelProperty("页码")
     private Integer pageNo = 1;
+    @ApiModelProperty("数据")
     private List<T> dataList;
 
     public Page(Integer pageNo, Integer pageSize){
