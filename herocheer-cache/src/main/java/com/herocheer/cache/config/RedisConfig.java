@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericToStringSerializer;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * redis配置
@@ -27,8 +28,8 @@ public class RedisConfig {
         redisTemplate.setHashKeySerializer(new GenericToStringSerializer<>(Object.class));
         redisTemplate.setHashValueSerializer(genericFastJsonRedisSerializer);
         // 设置支持事物
-        redisTemplate.setEnableTransactionSupport(true);
-        redisTemplate.afterPropertiesSet();
+//        redisTemplate.setEnableTransactionSupport(true);
+//        redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
 }

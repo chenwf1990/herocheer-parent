@@ -138,7 +138,8 @@ public class ResponseResult<T> {
         return message;
     }
 
-    public void setMessage(String message) {
+    public ResponseResult setMessage(String message) {
         this.message = message;
+        return this;
     }
 }
