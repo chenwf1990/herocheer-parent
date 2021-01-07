@@ -1,23 +1,21 @@
 package com.herocheer.mybatis.intercept;
 
-import cn.hutool.core.util.ReflectUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.Page.Page;
 import com.herocheer.common.base.entity.BaseEntity;
-import com.herocheer.common.constants.ResponseCode;
-import com.herocheer.common.exception.CommonException;
 import com.herocheer.common.utils.StringUtils;
+import org.apache.ibatis.builder.StaticSqlSource;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.mapping.SqlCommandType;
+import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -39,6 +37,7 @@ import java.util.Properties;
 @Component
 @Intercepts({
             @Signature(type = Executor.class,method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class}),
+//        @Signature(type = Executor.class, method = "query", args = {MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class, CacheKey.class, BoundSql.class}),
             @Signature(type = Executor.class,method = "update",args = {MappedStatement.class, Object.class}),
 })
 public class IbatisInterceptor implements Interceptor {
@@ -58,7 +57,7 @@ public class IbatisInterceptor implements Interceptor {
         return invocation.proceed();
     }
 
-    private void query(Invocation invocation) {
+    private void query(Invocation invocation) throws SQLException {
         Object[] args = invocation.getArgs();
         MappedStatement ms = (MappedStatement) args[0];
         Object parameterObject = args[1];
@@ -68,15 +67,17 @@ public class IbatisInterceptor implements Interceptor {
             //判断参数是否有Page参数，如果有则按照
             Page page = Page.getLocalPage();
             if (page != null) {
+                Page.clearPage();
                 final String sql = boundSql.getSql();
                 //计算总的条目数
                 final String countSQL = getMysqlCountSql(new StringBuffer(sql));
                 int totalCount = getCounts(ms, countSQL, boundSql,invocation,parameterObject);
                 //获取分页后的结果
                 final String pageSql = this.getMysqlPageSql(page, new StringBuffer(sql));
-                ReflectUtil.setFieldValue(boundSql, "sql", pageSql);
                 page.setTotalCount(totalCount);
-                Page.clearPage();
+                // 重新设置SQL语句映射
+                SqlSource source = new StaticSqlSource(ms.getConfiguration(),pageSql,boundSql.getParameterMappings());
+                args[0] = getMappedStatement(ms,source);
             }
         }
     }
@@ -204,4 +205,39 @@ public class IbatisInterceptor implements Interceptor {
          }
          return totpage;
      }
+
+    //利用新生成的SQL语句去替换原来的MappedStatement
+    private MappedStatement getMappedStatement(MappedStatement ms, SqlSource newSqlSource) {
+        MappedStatement.Builder builder = new MappedStatement.Builder(ms.getConfiguration(),ms.getId(),newSqlSource,ms.getSqlCommandType());
+
+        builder.resource(ms.getResource());
+        builder.fetchSize(ms.getFetchSize());
+        builder.statementType(ms.getStatementType());
+        builder.keyGenerator(ms.getKeyGenerator());
+        if(ms.getKeyProperties() != null && ms.getKeyProperties().length !=0){
+            StringBuffer keyProperties = new StringBuffer();
+            for(String keyProperty : ms.getKeyProperties()){
+                keyProperties.append(keyProperty).append(",");
+            }
+            keyProperties.delete(keyProperties.length()-1, keyProperties.length());
+            builder.keyProperty(keyProperties.toString());
+        }
+
+        //setStatementTimeout()
+        builder.timeout(ms.getTimeout());
+
+        //setStatementResultMap()
+        builder.parameterMap(ms.getParameterMap());
+
+        //setStatementResultMap()
+        builder.resultMaps(ms.getResultMaps());
+        builder.resultSetType(ms.getResultSetType());
+
+        //setStatementCache()
+        builder.cache(ms.getCache());
+        builder.flushCacheRequired(ms.isFlushCacheRequired());
+        builder.useCache(ms.isUseCache());
+
+        return builder.build();
+    }
 }

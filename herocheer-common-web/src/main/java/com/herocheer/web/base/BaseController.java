@@ -43,4 +43,19 @@ public class BaseController {
         return tokenId.toString();
     }
 
+    /**
+     * 获取当前登录用户的用户信息
+     * 备注：使用@AllowAnonymous获取不到用户信息，会抛出异常
+     * @param request
+     * @return
+     */
+    protected Long getCurUserId(HttpServletRequest request){
+        Object userBaseInfo = request.getAttribute("userBaseInfo");
+        if(userBaseInfo == null){
+            throw new CommonException(ResponseCode.UN_LOGIN,"请先登录");
+        }
+        UserEntity userEntity = JSONObject.parseObject(userBaseInfo.toString(),UserEntity.class);
+        return userEntity.getId();
+    }
+
 }
