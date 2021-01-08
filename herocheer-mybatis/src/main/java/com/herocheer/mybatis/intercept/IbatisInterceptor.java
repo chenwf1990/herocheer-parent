@@ -26,6 +26,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -86,22 +89,36 @@ public class IbatisInterceptor implements Interceptor {
         final MappedStatement mappedStatement= (MappedStatement) invocation.getArgs()[0];
         Object parameter = invocation.getArgs()[1];
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
-        if (sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) {
-            if (parameter != null && parameter instanceof BaseEntity) {
+        if ((sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) && parameter != null) {
+            if(parameter instanceof  BaseEntity){//单表处理
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
-                Long id = json == null || json.getLong("id") == null ? 0 : json.getLong("id");
-                String userName = json == null || StringUtils.isEmpty(json.getString("userName")) ? "system" : json.getString("userName");
-                if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
-                    entity.setUpdateId(id);
-                    entity.setUpdateTime(System.currentTimeMillis());
-                    entity.setUpdateBy(userName);
-                } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
-                    entity.setCreatedId(id);
-                    entity.setCreatedTime(System.currentTimeMillis());
-                    entity.setCreatedBy(userName);
+                buildBaseEntity(json,entity,sqlCommandType);
+            }else if (parameter instanceof Map){//批量处理
+                Map map = (Map) parameter;
+                if(map.get("list") != null && map.get("list") instanceof List){
+                    ArrayList list = (ArrayList) map.get("list");
+                    if (!list.isEmpty() && list.get(0) instanceof BaseEntity) {
+                        List<BaseEntity> entitys = list;
+                        JSONObject json = getUserBaseInfo(entitys.get(0));
+                        for (BaseEntity baseEntity : entitys) {
+                            buildBaseEntity(json, baseEntity, sqlCommandType);
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private void buildBaseEntity(JSONObject json, BaseEntity entity, SqlCommandType sqlCommandType) {
+        if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
+            entity.setUpdateId(json.getLong("id"));
+            entity.setUpdateTime(System.currentTimeMillis());
+            entity.setUpdateBy(json.getString("userName"));
+        } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
+            entity.setCreatedId(json.getLong("id"));
+            entity.setCreatedTime(System.currentTimeMillis());
+            entity.setCreatedBy(json.getString("userName"));
         }
     }
 
@@ -121,6 +138,12 @@ public class IbatisInterceptor implements Interceptor {
         }else{
             //此处不判断tokenId是否为空,直接让程序员必须传tokenId;
             userBaseInfo = redisClient.get(entity.getTokenId());
+        }
+        if(StringUtils.isEmpty(userBaseInfo)){
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("id",0);
+            jsonObject.put("userName","system");
+            return jsonObject;
         }
         return JSONObject.parseObject(userBaseInfo);
     }
@@ -143,7 +166,7 @@ public class IbatisInterceptor implements Interceptor {
      @return
    */
     private String getMysqlPageSql(Page page, StringBuffer sqlBuffer) {
-        sqlBuffer.append(" limit ").append(page.getPageNo()).append(",").append(page.getPageSize());
+        sqlBuffer.append(" limit ").append(page.getPageNo() * page.getPageSize()).append(",").append(page.getPageSize());
         return sqlBuffer.toString();
     }
 
