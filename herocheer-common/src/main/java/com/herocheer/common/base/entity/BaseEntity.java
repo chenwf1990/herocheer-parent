@@ -1,6 +1,9 @@
 package com.herocheer.common.base.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 
@@ -10,7 +13,10 @@ import java.io.Serializable;
  * @create 2020/12/21
  * @company 厦门熙重电子科技有限公司
  */
+@SuperBuilder
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class BaseEntity implements Serializable {
     private Long id;
     private String createdBy;

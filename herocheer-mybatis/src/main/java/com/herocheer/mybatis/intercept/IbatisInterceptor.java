@@ -166,7 +166,7 @@ public class IbatisInterceptor implements Interceptor {
      @return
    */
     private String getMysqlPageSql(Page page, StringBuffer sqlBuffer) {
-        sqlBuffer.append(" limit ").append(page.getPageNo() * page.getPageSize()).append(",").append(page.getPageSize());
+        sqlBuffer.append(" limit ").append((page.getPageNo() - 1) * page.getPageSize()).append(",").append(page.getPageSize());
         return sqlBuffer.toString();
     }
 

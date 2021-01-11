@@ -24,7 +24,7 @@ public class Page<T> implements Serializable {
     private Integer totalCount;
     @ApiModelProperty("页数")
     private Integer pageSize = 10;
-    @ApiModelProperty("页码")
+    @ApiModelProperty("页码,初始页1")
     private Integer pageNo = 1;
     @ApiModelProperty("数据")
     private List<T> dataList;
@@ -104,6 +104,9 @@ public class Page<T> implements Serializable {
     }
 
     public static <E> Page<E> startPage(int pageNo, int pageSize) {
+        if(pageNo <= 0){
+            pageNo = 1;
+        }
         Page<E> page = new Page(pageNo, pageSize);
         setLocalPage(page);
         return page;

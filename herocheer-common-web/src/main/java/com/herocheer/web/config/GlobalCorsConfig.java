@@ -1,10 +1,11 @@
 package com.herocheer.web.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * @desc 跨域处理
@@ -13,26 +14,50 @@ import org.springframework.web.filter.CorsFilter;
  * @company 厦门熙重电子科技有限公司
  */
 @Configuration
-public class GlobalCorsConfig {
-    /**
-     * 允许跨域调用的过滤器
-     */
-    @Bean
-    public CorsFilter corsFilter() {
-        final UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
-        final CorsConfiguration corsConfiguration = new CorsConfiguration();
-        /*是否允许请求带有验证信息*/
-        corsConfiguration.setAllowCredentials(true);
-        /*允许访问的客户端域名*/
-        corsConfiguration.addAllowedOrigin("*");
-        /*允许服务端访问的客户端请求头*/
-        corsConfiguration.addAllowedHeader("*");
-        /*允许访问的方法名,GET POST等*/
-        corsConfiguration.addAllowedMethod("*");
-        urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
-        return new CorsFilter(urlBasedCorsConfigurationSource);
+public class GlobalCorsConfig implements Filter {
+
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
     }
 
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
+        HttpServletResponse res = (HttpServletResponse) response;
+        HttpServletRequest req = (HttpServletRequest) request;
+        String origin = req.getHeader("Origin");
+
+        if (!org.springframework.util.StringUtils.isEmpty(origin)) {
+            //带cookie的时候，origin必须是全匹配，不能使用*
+            res.addHeader("Access-Control-Allow-Origin", origin);
+        }
+        res.addHeader("Access-Control-Allow-Methods", "*");
+        String headers = req.getHeader("Access-Control-Request-Headers");
+        // 支持所有自定义头
+        if (!org.springframework.util.StringUtils.isEmpty(headers)) {
+            res.addHeader("Access-Control-Allow-Headers", headers);
+        }
+        res.addHeader("Access-Control-Max-Age", "3600");
+        // enable cookie
+        res.addHeader("Access-Control-Allow-Credentials", "true");
+
+        //处理options请求
+        if (req.getMethod().toUpperCase().equals("OPTIONS")) {
+            return;
+        }
+
+        //获取token
+        //String auth = req.getHeader("Authorization");
+        String auth = req.getHeader("token");
+
+        chain.doFilter(request, response);
+    }
+
+    @Override
+    public void destroy() {
+
+    }
 
 }
