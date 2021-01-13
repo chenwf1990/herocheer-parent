@@ -5,13 +5,10 @@ import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.Page.Page;
 import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.utils.StringUtils;
-import org.apache.ibatis.builder.StaticSqlSource;
+import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
-import org.apache.ibatis.mapping.BoundSql;
-import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.mapping.SqlCommandType;
-import org.apache.ibatis.mapping.SqlSource;
+import org.apache.ibatis.mapping.*;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.ResultHandler;
@@ -60,12 +57,16 @@ public class IbatisInterceptor implements Interceptor {
         return invocation.proceed();
     }
 
-    private void query(Invocation invocation) throws SQLException {
+    private Object query(Invocation invocation) throws SQLException {
         Object[] args = invocation.getArgs();
+        Executor executor = (Executor) invocation.getTarget();
         MappedStatement ms = (MappedStatement) args[0];
         Object parameterObject = args[1];
+        RowBounds rowBounds = (RowBounds) args[2];
+        ResultHandler resultHandler = (ResultHandler) args[3];
         BoundSql boundSql = ms.getBoundSql(parameterObject);
         SqlCommandType sqlCommandType = ms.getSqlCommandType();
+        CacheKey cacheKey = executor.createCacheKey(ms, parameterObject, rowBounds, boundSql);
         if (sqlCommandType.SELECT.equals(sqlCommandType)) {
             //判断参数是否有Page参数，如果有则按照
             Page page = Page.getLocalPage();
@@ -78,12 +79,56 @@ public class IbatisInterceptor implements Interceptor {
                 //获取分页后的结果
                 final String pageSql = this.getMysqlPageSql(page, new StringBuffer(sql));
                 page.setTotalCount(totalCount);
-                // 重新设置SQL语句映射
-                SqlSource source = new StaticSqlSource(ms.getConfiguration(),pageSql,boundSql.getParameterMappings());
-                args[0] = getMappedStatement(ms,source);
+                BoundSql newBoundSql = copyFromBoundSql(ms, boundSql, pageSql);
+                MappedStatement newMs = copyFromMappedStatement(ms,new BoundSqlSqlSource(newBoundSql));
+                invocation.getArgs()[0]= newMs;
             }
         }
+        return null;
     }
+
+    /**
+     * 利用新生成的SQL语句去替换原来的MappedStatement
+     */
+    private MappedStatement copyFromMappedStatement(MappedStatement ms, BoundSqlSqlSource boundSqlSqlSource) {
+        MappedStatement.Builder builder = new MappedStatement.Builder(ms.getConfiguration(),ms.getId(),boundSqlSqlSource,ms.getSqlCommandType());
+        builder.resource(ms.getResource());
+        builder.fetchSize(ms.getFetchSize());
+        builder.statementType(ms.getStatementType());
+        builder.keyGenerator(ms.getKeyGenerator());
+        if(ms.getKeyProperties() != null && ms.getKeyProperties().length !=0){
+            StringBuffer keyProperties = new StringBuffer();
+            for(String keyProperty : ms.getKeyProperties()){
+                keyProperties.append(keyProperty).append(",");
+            }
+            keyProperties.delete(keyProperties.length()-1, keyProperties.length());
+            builder.keyProperty(keyProperties.toString());
+        }
+        builder.timeout(ms.getTimeout());
+        builder.parameterMap(ms.getParameterMap());
+        builder.resultMaps(ms.getResultMaps());
+        builder.resultSetType(ms.getResultSetType());
+        builder.cache(ms.getCache());
+        builder.flushCacheRequired(ms.isFlushCacheRequired());
+        builder.useCache(ms.isUseCache());
+
+        return builder.build();
+    }
+
+    /**
+     * 复制BoundSql对象
+     */
+    private BoundSql copyFromBoundSql(MappedStatement ms, BoundSql boundSql, String pageSql) {
+        BoundSql newBoundSql = new BoundSql(ms.getConfiguration(),pageSql, boundSql.getParameterMappings(), boundSql.getParameterObject());
+        for (ParameterMapping mapping : boundSql.getParameterMappings()) {
+            String prop = mapping.getProperty();
+            if (boundSql.hasAdditionalParameter(prop)) {
+                newBoundSql.setAdditionalParameter(prop, boundSql.getAdditionalParameter(prop));
+            }
+        }
+        return newBoundSql;
+    }
+
 
     private void update(Invocation invocation) {
         final MappedStatement mappedStatement= (MappedStatement) invocation.getArgs()[0];
@@ -229,38 +274,13 @@ public class IbatisInterceptor implements Interceptor {
          return totpage;
      }
 
-    //利用新生成的SQL语句去替换原来的MappedStatement
-    private MappedStatement getMappedStatement(MappedStatement ms, SqlSource newSqlSource) {
-        MappedStatement.Builder builder = new MappedStatement.Builder(ms.getConfiguration(),ms.getId(),newSqlSource,ms.getSqlCommandType());
-
-        builder.resource(ms.getResource());
-        builder.fetchSize(ms.getFetchSize());
-        builder.statementType(ms.getStatementType());
-        builder.keyGenerator(ms.getKeyGenerator());
-        if(ms.getKeyProperties() != null && ms.getKeyProperties().length !=0){
-            StringBuffer keyProperties = new StringBuffer();
-            for(String keyProperty : ms.getKeyProperties()){
-                keyProperties.append(keyProperty).append(",");
-            }
-            keyProperties.delete(keyProperties.length()-1, keyProperties.length());
-            builder.keyProperty(keyProperties.toString());
+    public class BoundSqlSqlSource implements SqlSource {
+        BoundSql boundSql;
+        public BoundSqlSqlSource(BoundSql boundSql) {
+            this.boundSql = boundSql;
         }
-
-        //setStatementTimeout()
-        builder.timeout(ms.getTimeout());
-
-        //setStatementResultMap()
-        builder.parameterMap(ms.getParameterMap());
-
-        //setStatementResultMap()
-        builder.resultMaps(ms.getResultMaps());
-        builder.resultSetType(ms.getResultSetType());
-
-        //setStatementCache()
-        builder.cache(ms.getCache());
-        builder.flushCacheRequired(ms.isFlushCacheRequired());
-        builder.useCache(ms.isUseCache());
-
-        return builder.build();
+        public BoundSql getBoundSql(Object parameterObject) {
+            return boundSql;
+        }
     }
 }
