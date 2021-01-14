@@ -34,6 +34,12 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-models</artifactId>
             <version>${swagger2.model.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>swagger-annotations</artifactId>
+                    <groupId>io.swagger</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
