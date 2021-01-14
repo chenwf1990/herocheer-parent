@@ -23,4 +23,6 @@ public interface BaseDao<T extends BaseEntity,ID extends Serializable> {
     long update(T t);
 
     long delete(ID id);
+
+    long count(Map<String, Object> params);
 }

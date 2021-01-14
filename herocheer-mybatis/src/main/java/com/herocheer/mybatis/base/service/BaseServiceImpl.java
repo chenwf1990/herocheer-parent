@@ -64,4 +64,15 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
     public long delete(ID id) {
         return this.dao.delete(id);
     }
+
+    /**
+     * 单表查询条数
+     *
+     * @param params
+     * @return
+     */
+    @Override
+    public long count(Map<String, Object> params) {
+        return this.dao.count(params);
+    }
 }

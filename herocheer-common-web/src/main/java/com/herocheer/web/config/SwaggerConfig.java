@@ -19,6 +19,8 @@ import java.util.ArrayList;
 @Configuration
 @EnableSwagger2
 public class SwaggerConfig {
+    @Value("${swagger.enable}")
+    private Boolean enable;
     @Value("${swagger.basePackage}")
     private String basePackage;
     @Value("${swagger.title}")
@@ -44,6 +46,7 @@ public class SwaggerConfig {
     public Docket docketUac() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
+                .enable(enable)
                 .select()// 通过.select()方法，去配置扫描接口,RequestHandlerSelectors配置如何扫描接口
                 .apis(RequestHandlerSelectors.basePackage(basePackage))
                 .build();

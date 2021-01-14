@@ -47,4 +47,11 @@ public interface BaseService<T extends BaseEntity,ID extends Serializable> {
      * @return
      */
     long delete(ID ID);
+
+    /**
+     * 单表查询条数
+     * @param params
+     * @return
+     */
+    long count(Map<String, Object> params);
 }
