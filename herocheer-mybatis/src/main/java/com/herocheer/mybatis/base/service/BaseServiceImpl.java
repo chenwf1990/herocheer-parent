@@ -46,12 +46,12 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
      * @return
      */
     @Override
-    public long insert(T t){
+    public int insert(T t){
         return this.dao.insert(t);
     }
 
     @Override
-    public long update(T t) {
+    public int update(T t) {
         return this.dao.update(t);
     }
 
@@ -61,7 +61,7 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
      * @param id
      * @return
      */
-    public long delete(ID id) {
+    public int delete(ID id) {
         return this.dao.delete(id);
     }
 
@@ -72,7 +72,7 @@ public abstract class BaseServiceImpl<D extends BaseDao<T,ID>,T extends BaseEnti
      * @return
      */
     @Override
-    public long count(Map<String, Object> params) {
+    public int count(Map<String, Object> params) {
         return this.dao.count(params);
     }
 }

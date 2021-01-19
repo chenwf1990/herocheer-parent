@@ -32,26 +32,26 @@ public interface BaseService<T extends BaseEntity,ID extends Serializable> {
      * @param t
      * @return
      */
-    long insert(T t);
+    int insert(T t);
 
     /**
      * 根据主键更新数据
      * @param t
      * @return
      */
-    long update(T t);
+    int update(T t);
 
     /**
      * 根据主键删除数据
      * @param ID
      * @return
      */
-    long delete(ID ID);
+    int delete(ID ID);
 
     /**
      * 单表查询条数
      * @param params
      * @return
      */
-    long count(Map<String, Object> params);
+    int count(Map<String, Object> params);
 }
