@@ -1,7 +1,6 @@
 package com.herocheer.mybatis.base.dao;
 
 import com.herocheer.common.base.entity.BaseEntity;
-import org.apache.ibatis.annotations.Select;
 
 import java.io.Serializable;
 import java.util.List;
@@ -18,11 +17,11 @@ public interface BaseDao<T extends BaseEntity,ID extends Serializable> {
 
     List<T> findByLimit(Map<String, Object> params);
 
-    long insert(T t);
+    int insert(T t);
 
-    long update(T t);
+    int update(T t);
 
-    long delete(ID id);
+    int delete(ID id);
 
-    long count(Map<String, Object> params);
+    int count(Map<String, Object> params);
 }

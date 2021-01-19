@@ -1,5 +1,6 @@
 package com.herocheer.mybatis.intercept;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.Page.Page;
@@ -13,12 +14,15 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -63,10 +67,8 @@ public class IbatisInterceptor implements Interceptor {
         MappedStatement ms = (MappedStatement) args[0];
         Object parameterObject = args[1];
         RowBounds rowBounds = (RowBounds) args[2];
-        ResultHandler resultHandler = (ResultHandler) args[3];
         BoundSql boundSql = ms.getBoundSql(parameterObject);
         SqlCommandType sqlCommandType = ms.getSqlCommandType();
-        CacheKey cacheKey = executor.createCacheKey(ms, parameterObject, rowBounds, boundSql);
         if (sqlCommandType.SELECT.equals(sqlCommandType)) {
             //判断参数是否有Page参数，如果有则按照
             Page page = Page.getLocalPage();
@@ -139,9 +141,10 @@ public class IbatisInterceptor implements Interceptor {
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
                 buildBaseEntity(json,entity,sqlCommandType);
-            }else if (parameter instanceof Map){//批量处理
+            }else if (parameter instanceof Map){
                 Map map = (Map) parameter;
-                if(map.get("list") != null && map.get("list") instanceof List){
+                //批量处理
+                if(map.containsKey("list") && map.get("list") != null && map.get("list") instanceof List){
                     ArrayList list = (ArrayList) map.get("list");
                     if (!list.isEmpty() && list.get(0) instanceof BaseEntity) {
                         List<BaseEntity> entitys = list;
@@ -150,8 +153,39 @@ public class IbatisInterceptor implements Interceptor {
                             buildBaseEntity(json, baseEntity, sqlCommandType);
                         }
                     }
+                }else {//单表更新处理
+                    if(sqlCommandType.UPDATE.equals(sqlCommandType)) {
+                        JSONObject json = getUserBaseInfo(null);
+                        BoundSql boundSql = mappedStatement.getBoundSql(parameter);
+                        final String sql = boundSql.getSql();
+                        String[] s = sql.split("where");
+                        StringBuffer sb = new StringBuffer();
+                        sb.append(s[0]);
+                        sb.append(",updateId = " + json.getLong("id") + " ");
+                        sb.append(",updateBy = '" + json.getString("userName") + "' ");
+                        sb.append(",updateTime = " + System.currentTimeMillis() + " ");
+                        sb.append(" where ");
+                        sb.append(s[1] + " ");
+                        BoundSql newBoundSql = copyFromBoundSql(mappedStatement, boundSql, sb.toString());
+                        MappedStatement newMs = copyFromMappedStatement(mappedStatement, new BoundSqlSqlSource(newBoundSql));
+                        invocation.getArgs()[0] = newMs;
+                    }
                 }
             }
+        }
+    }
+
+    /**
+     * 为对象的操作属性赋值
+     *
+     * @param bean
+     */
+    private void setProperty(Object bean, String name, Object value) {
+        try {
+            //根据需要，将相关属性赋上默认值
+            BeanUtil.setProperty(bean, name, value);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -281,6 +315,27 @@ public class IbatisInterceptor implements Interceptor {
         }
         public BoundSql getBoundSql(Object parameterObject) {
             return boundSql;
+        }
+    }
+
+    /**
+     * 为对象的操作属性赋值
+     *
+     * @param obj
+     */
+    private void setProperty(final Object obj, final SqlCommandType sqlCommandType,JSONObject json) {
+        try {
+            if (sqlCommandType == SqlCommandType.INSERT) {
+                BeanUtil.setProperty(obj, "createdId", json.getLong("id"));
+                BeanUtil.setProperty(obj, "createdTime", System.currentTimeMillis());
+                BeanUtil.setProperty(obj, "createdBy", json.getLong("userName"));
+            } else {
+                BeanUtil.setProperty(obj, "updateId", json.getLong("id"));
+                BeanUtil.setProperty(obj, "updateTime", System.currentTimeMillis());
+                BeanUtil.setProperty(obj, "updateBy", json.getLong("userName"));
+            }
+        } catch (Exception e) {
+
         }
     }
 }
