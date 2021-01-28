@@ -13,6 +13,7 @@
         <module name="herocheer-dubbo-client" />
         <module name="herocheer-dubbo-provider" />
         <module name="herocheer-mybatis" />
+        <module name="herocheer-upload" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -31,6 +32,7 @@
       <module name="herocheer-dubbo-provider" options="" />
       <module name="herocheer-dubbo-provider1" options="-parameters" />
       <module name="herocheer-mybatis" options="" />
+      <module name="herocheer-upload" options="-parameters" />
     </option>
   </component>
 </project>

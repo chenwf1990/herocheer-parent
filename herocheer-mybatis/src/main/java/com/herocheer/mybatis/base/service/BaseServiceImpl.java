@@ -6,7 +6,6 @@ import com.herocheer.common.exception.CommonException;
 import com.herocheer.mybatis.base.dao.BaseDao;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Resource;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;

@@ -24,6 +24,7 @@
         <module>herocheer-cache</module>
         <module>herocheer-dubbo/herocheer-dubbo-client</module>
         <module>herocheer-dubbo/herocheer-dubbo-provider</module>
+        <module>herocheer-upload</module>
     </modules>
 
     <properties>

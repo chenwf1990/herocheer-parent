@@ -87,6 +87,12 @@ public class ResponseResult<T> {
         return fail();
     }
 
+    public static <T> ResponseResult<T> isSuccess(int count) {
+        if(count > 0){
+            return ok();
+        }
+        return fail();
+    }
     public static <T> ResponseResult<T> getResponse(Integer code) {
         ResponseResult responseResult = new ResponseResult();
         responseResult.setSuccess("F");

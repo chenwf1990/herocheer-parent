@@ -8,7 +8,6 @@ import com.herocheer.common.base.entity.UserEntity;
 import com.herocheer.common.constants.ResponseCode;
 import com.herocheer.common.utils.StringUtils;
 import com.herocheer.web.annotation.AllowAnonymous;
-import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 

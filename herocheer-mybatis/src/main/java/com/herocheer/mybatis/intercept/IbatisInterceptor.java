@@ -6,7 +6,6 @@ import com.herocheer.cache.bean.RedisClient;
 import com.herocheer.common.base.Page.Page;
 import com.herocheer.common.base.entity.BaseEntity;
 import com.herocheer.common.utils.StringUtils;
-import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.executor.parameter.ParameterHandler;
 import org.apache.ibatis.mapping.*;
@@ -14,15 +13,12 @@ import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.scripting.defaults.DefaultParameterHandler;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -137,7 +133,7 @@ public class IbatisInterceptor implements Interceptor {
         Object parameter = invocation.getArgs()[1];
         SqlCommandType sqlCommandType = mappedStatement.getSqlCommandType();
         if ((sqlCommandType.UPDATE.equals(sqlCommandType) || sqlCommandType.INSERT.equals(sqlCommandType)) && parameter != null) {
-            if(parameter instanceof  BaseEntity){//单表处理
+            if(parameter instanceof BaseEntity){//单表处理
                 BaseEntity entity = (BaseEntity) parameter;
                 JSONObject json = getUserBaseInfo(entity);
                 buildBaseEntity(json,entity,sqlCommandType);
@@ -191,13 +187,25 @@ public class IbatisInterceptor implements Interceptor {
 
     private void buildBaseEntity(JSONObject json, BaseEntity entity, SqlCommandType sqlCommandType) {
         if (sqlCommandType.UPDATE.equals(sqlCommandType)) {
-            entity.setUpdateId(json.getLong("id"));
-            entity.setUpdateTime(System.currentTimeMillis());
-            entity.setUpdateBy(json.getString("userName"));
+            if(entity.getUpdateId() == null) {
+                entity.setUpdateId(json.getLong("id"));
+            }
+            if(entity.getUpdateTime() == null) {
+                entity.setUpdateTime(System.currentTimeMillis());
+            }
+            if(StringUtils.isEmpty(entity.getUpdateBy())) {
+                entity.setUpdateBy(json.getString("userName"));
+            }
         } else if (sqlCommandType.INSERT.equals(sqlCommandType)) {
-            entity.setCreatedId(json.getLong("id"));
-            entity.setCreatedTime(System.currentTimeMillis());
-            entity.setCreatedBy(json.getString("userName"));
+            if(entity.getCreatedId() == null) {
+                entity.setCreatedId(json.getLong("id"));
+            }
+            if(entity.getCreatedTime() == null) {
+                entity.setCreatedTime(System.currentTimeMillis());
+            }
+            if(entity.getCreatedBy() == null) {
+                entity.setCreatedBy(json.getString("userName"));
+            }
         }
     }
 
@@ -216,7 +224,9 @@ public class IbatisInterceptor implements Interceptor {
             }
         }else{
             //此处不判断tokenId是否为空,直接让程序员必须传tokenId;
-            userBaseInfo = redisClient.get(entity.getTokenId());
+            if(entity != null && !StringUtils.isEmpty(entity.getTokenId())) {
+                userBaseInfo = redisClient.get(entity.getTokenId());
+            }
         }
         if(StringUtils.isEmpty(userBaseInfo)){
             JSONObject jsonObject = new JSONObject();
