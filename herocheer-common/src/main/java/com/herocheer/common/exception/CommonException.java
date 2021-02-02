@@ -2,6 +2,9 @@ package com.herocheer.common.exception;
 
 import com.herocheer.common.constants.ResponseCode;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * @desc 通用异常类
  * @author chenwf
@@ -218,4 +221,17 @@ public class CommonException extends RuntimeException {
         this.detailErrorMsg = detailErrorMsg;
     }
 
+    public CommonException(String errorMsg,Object...obj) {
+        Pattern p = Pattern.compile("\\{\\}");
+        Matcher m = p.matcher(errorMsg);
+        StringBuffer sb = new StringBuffer();
+        for (Object o : obj) {
+            if(m.find()){
+                m.appendReplacement(sb, o == null ? null : o.toString());
+            }
+        }
+        m.appendTail(sb);//把符合的数据追加到sb尾
+        this.errorCode = ResponseCode.SUCCESS;
+        this.errorMsg = sb.toString();
+    }
 }
