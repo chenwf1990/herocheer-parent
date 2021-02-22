@@ -42,6 +42,17 @@ public class RedisClient {
     }
 
     /**
+     * 设置redis值，有过期时间
+     *
+     * @param key
+     * @param value
+     * @param expireTime
+     */
+    public void set(String key, Object value, long expireTime) {
+        redisTemplate.opsForValue().set(key, value, expireTime, TimeUnit.SECONDS);
+    }
+
+    /**
      * 获取redis值
      *
      * @param key
