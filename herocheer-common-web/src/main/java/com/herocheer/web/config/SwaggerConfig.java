@@ -41,12 +41,15 @@ public class SwaggerConfig {
     private String url;
     @Value("${swagger.contact.email}")
     private String email;
+    @Value("${swagger.host}")
+    private String host;
 
     @Bean
     public Docket docketUac() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .enable(enable)
+                .host(host)
                 .select()// 通过.select()方法，去配置扫描接口,RequestHandlerSelectors配置如何扫描接口
                 .apis(RequestHandlerSelectors.basePackage(basePackage))
                 .build();
