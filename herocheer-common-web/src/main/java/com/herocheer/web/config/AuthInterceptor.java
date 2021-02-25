@@ -72,7 +72,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         userEntity.setUserName(json.getString("userName"));
         userEntity.setToken(authorization);
         userEntity.setUserType(json.getIntValue("userType"));
-        userEntity.setOtherId(null);//预留
+        userEntity.setOtherId(json.getString("otherId"));//预留
         request.setAttribute("userBaseInfo",JSONObject.toJSONString(userEntity));
     }
 
