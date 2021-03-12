@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.regex.Pattern;
 
 /**
@@ -47,12 +48,11 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler(CommonException.class)
     @ResponseStatus(HttpStatus.OK)
-    public ResponseResult handleException(CommonException e) {
+    public ResponseResult handleException(HttpServletRequest request, CommonException e) {
         if (e.getErrorClass() != null) {
-            final Logger logger = LoggerFactory.getLogger(e.getErrorClass());
-            logger.error(e.getMessage(), e);
+            log.error("异常，uri：{},msg:{}",request.getRequestURI(),e.getMessage(), e);
         } else {
-            log.error(e.getMessage(), e);
+            log.error("异常，uri：{}", request.getRequestURI(), e);
         }
         return ResponseResult.fail(e.getErrorCode(), e.getErrorMsg());
     }
@@ -80,9 +80,10 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseResult handleException(HttpRequestMethodNotSupportedException e) {
+    public ResponseResult handleException(HttpServletRequest request,HttpRequestMethodNotSupportedException e) {
         final String message = e.getMessage();
-        log.error(message, e);
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),message, e);
+
         final String[] split = message.split("'");
         if (split.length >= 2) {
             return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求方式错误"+split[1]);
@@ -98,9 +99,9 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseResult handleException(Throwable e) {
+    public ResponseResult handleException(HttpServletRequest request,Throwable e) {
         final String message = e.getMessage() != null ? e.getMessage() : e.toString();
-        log.error(message, e);
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),message, e);
         final String regEx = "[\u4e00-\u9fa5]";
         final Pattern p = Pattern.compile(regEx);
         if (p.matcher(message).find()) {
@@ -121,8 +122,8 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler({BindException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseResult handleException(Exception e) {
-        log.error(e.getMessage(), e);
+    public ResponseResult handleException(HttpServletRequest request,Exception e) {
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),e.getMessage(), e);
         return ResponseResult.fail(ResponseCode.SERVER_ERROR, this.getBindMessage(e.getMessage()));
     }
 
@@ -134,21 +135,21 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ResponseResult noMapping(NoHandlerFoundException e) {
-        log.error(e.getMessage(), e);
+    public ResponseResult noMapping(HttpServletRequest request,NoHandlerFoundException e) {
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),e.getMessage(), e);
         return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求路径不存在");
     }
 
     /**
      * Error param error result.
      *
-     * @param me the me
+     * @param e the e
      * @return the error result
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseResult errorParam(MethodArgumentTypeMismatchException me) {
-        log.error(me.getMessage(), me);
+    public ResponseResult errorParam(HttpServletRequest request,MethodArgumentTypeMismatchException e) {
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),e.getMessage(), e);
         return ResponseResult.fail(ResponseCode.SERVER_ERROR, "请求参数不合法");
     }
 
@@ -160,9 +161,9 @@ public class ExceptionHandlerAdvice {
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-    public ResponseResult handleException(HttpMediaTypeNotSupportedException e) {
+    public ResponseResult handleException(HttpServletRequest request,HttpMediaTypeNotSupportedException e) {
         final String message = e.getMessage();
-        log.error(message, e);
+        log.error("异常，uri：{},msg:{}",request.getRequestURI(),e.getMessage(), e);
         final String[] split = message.split("'");
         if (split.length >= 2) {
             return ResponseResult.fail(ResponseCode.SERVER_ERROR, "参数文本类型错误"+split[1]);

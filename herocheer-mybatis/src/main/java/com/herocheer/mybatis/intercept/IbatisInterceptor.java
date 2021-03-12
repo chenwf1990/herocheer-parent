@@ -154,14 +154,20 @@ public class IbatisInterceptor implements Interceptor {
                         JSONObject json = getUserBaseInfo(null);
                         BoundSql boundSql = mappedStatement.getBoundSql(parameter);
                         final String sql = boundSql.getSql();
-                        String[] s = sql.split("where");
+                        final String where = "where";
+                        String prefix = sql;
+                        String suffix = " ";
+                        if(sql.contains(where)) {
+                            prefix = sql.substring(0, sql.indexOf("where"));
+                            suffix = sql.substring(sql.indexOf("where"));
+                        }
                         StringBuffer sb = new StringBuffer();
-                        sb.append(s[0]);
+                        sb.append(prefix);
                         sb.append(",updateId = " + json.getLong("id") + " ");
                         sb.append(",updateBy = '" + json.getString("userName") + "' ");
                         sb.append(",updateTime = " + System.currentTimeMillis() + " ");
-                        sb.append(" where ");
-                        sb.append(s[1] + " ");
+                        sb.append(where);
+                        sb.append(suffix + " ");
                         BoundSql newBoundSql = copyFromBoundSql(mappedStatement, boundSql, sb.toString());
                         MappedStatement newMs = copyFromMappedStatement(mappedStatement, new BoundSqlSqlSource(newBoundSql));
                         invocation.getArgs()[0] = newMs;
