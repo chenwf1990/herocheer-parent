@@ -158,15 +158,14 @@ public class IbatisInterceptor implements Interceptor {
                         String prefix = sql;
                         String suffix = " ";
                         if(sql.contains(where)) {
-                            prefix = sql.substring(0, sql.indexOf("where"));
-                            suffix = sql.substring(sql.indexOf("where"));
+                            prefix = sql.substring(0, sql.indexOf(where));
+                            suffix = sql.substring(sql.indexOf(where));
                         }
                         StringBuffer sb = new StringBuffer();
                         sb.append(prefix);
                         sb.append(",updateId = " + json.getLong("id") + " ");
                         sb.append(",updateBy = '" + json.getString("userName") + "' ");
                         sb.append(",updateTime = " + System.currentTimeMillis() + " ");
-                        sb.append(where);
                         sb.append(suffix + " ");
                         BoundSql newBoundSql = copyFromBoundSql(mappedStatement, boundSql, sb.toString());
                         MappedStatement newMs = copyFromMappedStatement(mappedStatement, new BoundSqlSqlSource(newBoundSql));
